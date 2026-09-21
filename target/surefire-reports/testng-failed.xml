@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Failed suite [Practice Test Automation Regression Suite]" guice-stage="DEVELOPMENT" verbose="0">
+  <test thread-count="5" name="Regression Tests(failed)" verbose="0">
+    <groups>
+      <run>
+        <include name="regression"/>
+      </run>
+    </groups>
+    <classes>
+      <class name="tests.LoginTest">
+        <methods>
+          <include name="setUp"/>
+          <include name="multiplePageObjectsCanBeUsedInOneFlow"/>
+          <include name="tearDown"/>
+        </methods>
+      </class> <!-- tests.LoginTest -->
+    </classes>
+  </test> <!-- Regression Tests(failed) -->
+</suite> <!-- Failed suite [Practice Test Automation Regression Suite] -->

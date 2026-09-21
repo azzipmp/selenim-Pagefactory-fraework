@@ -1,1 +1,5 @@
+tests\CsvUtils.class
+tests\listeners\ExtentReportManager.class
+tests\listeners\ExtentTestListener.class
 tests\LoginTest.class
+tests\CsvUtils$CsvTable.class

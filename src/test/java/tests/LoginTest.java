@@ -3,25 +3,28 @@ package tests;
 import framework.ConfigReader;
 import framework.DriverFactory;
 import framework.LoggerUtil;
-import framework.TestData;
+import framework.TestDataColumns;
 import org.openqa.selenium.WebDriver;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import pages.HomePage;
 import pages.LoginPage;
 
 public class LoginTest {
 
+    private static final String DEFAULT_LOGIN_CSV = "testdata/login-credentials.csv";
+ 
+
     private WebDriver driver;
 
-    @DataProvider(name = "browserProvider")
-    public Object[][] browserProvider() {
-        String configuredBrowser = ConfigReader.getString("browser", "chrome");
-        return new Object[][] {{ configuredBrowser }};
+    private CsvUtils.CsvTable loginTestData() {
+        CsvUtils.CsvTable csvTable = CsvUtils.readCsvData(DEFAULT_LOGIN_CSV);
+        LoggerUtil.info("Loaded " + csvTable.rowCount() + " test data entries from CSV file: " + csvTable.source());
+        return csvTable;
     }
+
 
     @BeforeMethod(alwaysRun = true)
     public void setUp() {
@@ -37,28 +40,72 @@ public class LoginTest {
         LoggerUtil.info("Browser session closed after test");
     }
 
-    @Test(dataProvider = "browserProvider")
-    public void validLoginNavigatesToHomePage(String browser) {
-        LoggerUtil.info("Running valid login test in browser: " + browser);
-        LoginPage loginPage = new LoginPage(driver);
-        loginPage.open(TestData.url());
+    @Test(groups = {"smoke"})
+    public void validLoginNavigatesToHomePage() {
+        CsvUtils.CsvTable testData = loginTestData();
+        String url = ConfigReader.getString("url", "");
+        int executedRows = 0;
 
-        HomePage homePage = loginPage.login(TestData.username(), TestData.password());
+        for (int rowIndex = 0; rowIndex < testData.rowCount(); rowIndex++) {
+            String username = testData.getValue(rowIndex, TestDataColumns.USERNAME_COLUMN);
+            String password = testData.getValue(rowIndex, TestDataColumns.PASSWORD_COLUMN);
+            if (username == null || password == null || username.isBlank() || password.isBlank()) {
+                continue;
+            }
 
-        Assert.assertTrue(homePage.isLoaded(), "Expected successful login to land on the logged-in page");
+            if (executedRows > 0) {
+                DriverFactory.quitDriver();
+                this.driver = DriverFactory.getDriver();
+            }
+
+            LoggerUtil.info("Running valid login test for user: " + username);
+            LoginPage loginPage = new LoginPage(driver);
+            loginPage.open(url);
+
+            HomePage homePage = loginPage.login(username, password);
+
+            Assert.assertTrue(homePage.isLoaded(), "Expected successful login to land on the logged-in page");
+            executedRows++;
+        }
+
+        Assert.assertTrue(!url.isBlank(), "Expected url to be configured in config.properties");
+        Assert.assertTrue(executedRows > 0, "Expected at least one valid username/password row in CSV test data");
+
         LoggerUtil.info("Login flow completed successfully");
     }
 
-    @Test(dataProvider = "browserProvider")
-    public void multiplePageObjectsCanBeUsedInOneFlow(String browser) {
-        LoggerUtil.info("Running multi-page validation in browser: " + browser);
-        LoginPage loginPage = new LoginPage(driver);
-        HomePage homePage = new HomePage(driver);
+    @Test(groups = {"regression"})
+    public void multiplePageObjectsCanBeUsedInOneFlow() {
+        CsvUtils.CsvTable testData = loginTestData();
+        String url = ConfigReader.getString("url", "");
+        int executedRows = 0;
 
-        loginPage.open(TestData.url());
-        loginPage.login(TestData.username(), TestData.password());
+        for (int rowIndex = 0; rowIndex < testData.rowCount(); rowIndex++) {
+            String username = testData.getValue(rowIndex, TestDataColumns.USERNAME_COLUMN);
+            String password = testData.getValue(rowIndex, TestDataColumns.PASSWORD_COLUMN);
+            if (username == null || password == null || username.isBlank() || password.isBlank()) {
+                continue;
+            }
 
-        Assert.assertTrue(homePage.isLoaded(), "Expected the home page object to reflect the logged-in state");
+            if (executedRows > 0) {
+                DriverFactory.quitDriver();
+                this.driver = DriverFactory.getDriver();
+            }
+
+            LoggerUtil.info("Running multi-page validation for user: " + username);
+            LoginPage loginPage = new LoginPage(driver);
+            HomePage homePage = new HomePage(driver);
+
+            loginPage.open(url);
+            loginPage.login(username, password);
+
+            Assert.assertTrue(homePage.isLoaded(), "Expected the home page object to reflect the logged-in state");
+            executedRows++;
+        }
+
+        Assert.assertTrue(!url.isBlank(), "Expected url to be configured in config.properties");
+        Assert.assertTrue(executedRows > 0, "Expected at least one valid username/password row in CSV test data");
+
         LoggerUtil.info("Multiple page objects validated in the same flow");
     }
 }

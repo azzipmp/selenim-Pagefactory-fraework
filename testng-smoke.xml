@@ -1,0 +1,16 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Practice Test Automation Smoke Suite" parallel="false">
+    <listeners>
+        <listener class-name="tests.listeners.ExtentTestListener"/>
+    </listeners>
+    <test name="Smoke Tests">
+        <groups>
+            <run>
+                <include name="smoke"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="tests.LoginTest"/>
+        </classes>
+    </test>
+</suite>

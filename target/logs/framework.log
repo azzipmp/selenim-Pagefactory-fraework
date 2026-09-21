@@ -1,0 +1,28 @@
+Sep 21, 2026 12:27:22 AM framework.LoggerUtil info
+INFO: WebDriver initialized for browser: chrome
+Sep 21, 2026 12:27:22 AM framework.LoggerUtil info
+INFO: Test setup complete for browser: chrome
+Sep 21, 2026 12:27:23 AM framework.LoggerUtil info
+INFO: Loaded 2 test data entries from CSV file: testdata/login-credentials.csv
+Sep 21, 2026 12:27:23 AM framework.LoggerUtil info
+INFO: Running valid login test for user: student
+Sep 21, 2026 12:27:23 AM framework.LoggerUtil info
+INFO: Initialized page object: LoginPage
+Sep 21, 2026 12:27:25 AM framework.LoggerUtil info
+INFO: Initialized page object: HomePage
+Sep 21, 2026 12:27:25 AM framework.LoggerUtil info
+INFO: Closing WebDriver session
+Sep 21, 2026 12:27:27 AM framework.LoggerUtil info
+INFO: WebDriver initialized for browser: chrome
+Sep 21, 2026 12:27:27 AM framework.LoggerUtil info
+INFO: Running valid login test for user: student
+Sep 21, 2026 12:27:27 AM framework.LoggerUtil info
+INFO: Initialized page object: LoginPage
+Sep 21, 2026 12:27:29 AM framework.LoggerUtil info
+INFO: Initialized page object: HomePage
+Sep 21, 2026 12:27:29 AM framework.LoggerUtil info
+INFO: Login flow completed successfully
+Sep 21, 2026 12:27:30 AM framework.LoggerUtil info
+INFO: Closing WebDriver session
+Sep 21, 2026 12:27:30 AM framework.LoggerUtil info
+INFO: Browser session closed after test

@@ -34,6 +34,10 @@ public final class DriverFactory {
         return DRIVER_THREAD_LOCAL.get();
     }
 
+    public static WebDriver getCurrentDriver() {
+        return DRIVER_THREAD_LOCAL.get();
+    }
+
     public static void createDriver() {
         String selectedBrowser = browserName != null ? browserName : ConfigReader.getString("browser", "chrome");
         WebDriver driver;
