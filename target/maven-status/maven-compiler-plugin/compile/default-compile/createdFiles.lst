@@ -1,0 +1,8 @@
+framework\TestData.class
+pages\LoginPage.class
+pages\HomePage.class
+framework\PageObjectExtension.class
+framework\ConfigReader.class
+framework\DriverFactory.class
+framework\BasePage.class
+framework\LoggerUtil.class

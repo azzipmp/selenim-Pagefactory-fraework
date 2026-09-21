@@ -1,0 +1,79 @@
+# Selenium Page-Object Fixture Framework
+
+A Selenium + Java framework where page objects are **fixtures** — declared as
+test method parameters and auto-instantiated — instead of being manually
+constructed with `new LoginPage(driver)` inside every test.
+
+## Why this mirrors Playwright
+
+| Playwright (JS/TS) | This framework (Java + JUnit 5) |
+|---|---|
+| `test('...', async ({ page }) => {...})` | `void test(LoginPage loginPage) {...}` |
+| Test framework injects `page`, `browser`, `context` | `PageObjectExtension` injects any `BasePage` subtype |
+| Fixture scope handles setup/teardown automatically | `DriverFactory` (setup) + `afterEach` (teardown) |
+| Fixtures are composable — request only what you need | Declare exactly the page objects a test needs, nothing else gets built |
+
+The mechanism that makes this possible in Java is JUnit 5's
+**`ParameterResolver` extension point** — the same SPI that lets frameworks
+like Spring or Mockito inject `@Autowired` beans or mocks into test methods.
+We're repurposing it to resolve *page objects* instead.
+
+## Architecture
+
+```
+src/main/java/
+├── framework/
+│   ├── DriverFactory.java        # ThreadLocal WebDriver lifecycle (parallel-safe)
+│   ├── BasePage.java              # Common PageFactory + wait setup for every page
+│   └── PageObjectExtension.java   # The "fixture provider" — the core of this design
+└── pages/
+    ├── LoginPage.java
+    └── HomePage.java
+
+src/test/java/
+└── tests/
+    └── LoginTest.java             # Zero manual instantiation in test bodies
+```
+
+### How resolution works, step by step
+
+1. A test class is annotated `@ExtendWith(PageObjectExtension.class)`.
+2. JUnit 5 inspects each test method's parameters before invoking it.
+3. For every parameter, it asks `PageObjectExtension.supportsParameter(...)`
+   — the extension says yes if the parameter type extends `BasePage` (or is
+   `WebDriver` itself).
+4. For each supported parameter, JUnit calls `resolveParameter(...)`, which:
+   - Pulls (or lazily creates) the thread's `WebDriver` from `DriverFactory`.
+   - Reflectively invokes the page class's `(WebDriver)` constructor.
+   - `BasePage`'s constructor runs `PageFactory.initElements(...)`, wiring
+     up all `@FindBy` locators.
+5. The fully-initialized page object is handed to the test as if it always
+   existed — the test never sees the driver plumbing.
+6. After the test, `afterEach` quits the driver, exactly like Playwright
+   tearing down `page`/`context` after each test.
+
+## Extending this further
+
+- **Multiple browsers per test** — support a `@Browser("firefox")`
+  annotation read inside `resolveParameter` to pick a different
+  `DriverFactory` strategy per fixture, similar to Playwright's
+  project-based browser matrix.
+- **Fixture composition** — if a page object's constructor needs another
+  fixture (e.g., a `TestDataFixture` for seeded users), extend
+  `instantiatePage` to resolve constructor arguments recursively instead of
+  assuming a single `WebDriver` parameter.
+- **Scoped fixtures** — right now every fixture is function-scoped (fresh
+  per test, like Playwright's default). A `@BeforeAll`-backed variant could
+  support class-scoped fixtures for expensive setup, mirroring Playwright's
+  `worker` fixture scope.
+- **Base URL / config fixture** — add a `TestConfig` fixture (also resolved
+  by the extension) so page objects and tests can pull environment config
+  (base URL, credentials) without hardcoding them, the way Playwright's
+  `baseURL` fixture works.
+
+## Running
+
+```bash
+mvn test
+mvn test -Dheadless=true   # run headless
+```

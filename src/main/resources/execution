@@ -1,0 +1,3 @@
+cd "C:\Users\azzip\Downloads\selenium-page-fixture-framework\selenium-page-fixture-framework"
+$env:Path = "C:\Program Files\Microsoft\jdk-21.0.12.101-hotspot\bin;C:\Tools\apache-maven-3.9.16\bin;" + $env:Path
+mvn test
