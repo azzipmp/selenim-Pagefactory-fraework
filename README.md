@@ -2,23 +2,20 @@
 
 [![Selenium Test CI](https://github.com/azzipmp/selenim-Pagefactory-fraework/actions/workflows/ci.yml/badge.svg)](https://github.com/azzipmp/selenim-Pagefactory-fraework/actions/workflows/ci.yml)
 
-A Selenium + Java framework where page objects are **fixtures** — declared as
-test method parameters and auto-instantiated — instead of being manually
-constructed with `new LoginPage(driver)` inside every test.
+A Selenium + Java framework using TestNG, Page Object Model, CSV test data,
+Rest Assured API tests, and Extent reporting.
 
 ## Why this mirrors Playwright
 
-| Playwright (JS/TS) | This framework (Java + JUnit 5) |
+| Playwright (JS/TS) | This framework (Java + TestNG) |
 |---|---|
-| `test('...', async ({ page }) => {...})` | `void test(LoginPage loginPage) {...}` |
-| Test framework injects `page`, `browser`, `context` | `PageObjectExtension` injects any `BasePage` subtype |
-| Fixture scope handles setup/teardown automatically | `DriverFactory` (setup) + `afterEach` (teardown) |
-| Fixtures are composable — request only what you need | Declare exactly the page objects a test needs, nothing else gets built |
+| `test('...', async ({ page }) => {...})` | `@Test public void testMethod() {...}` |
+| Test framework injects `page`, `browser`, `context` | Lifecycle setup/teardown is handled with TestNG annotations |
+| Fixture scope handles setup/teardown automatically | `DriverFactory` manages browser lifecycle |
+| Fixtures are composable — request only what you need | Page objects are created as needed in test flow |
 
-The mechanism that makes this possible in Java is JUnit 5's
-**`ParameterResolver` extension point** — the same SPI that lets frameworks
-like Spring or Mockito inject `@Autowired` beans or mocks into test methods.
-We're repurposing it to resolve *page objects* instead.
+The framework keeps setup logic centralized and supports environment-based
+config switching (`qa`/`uat`) through Maven parameters.
 
 ## Architecture
 
@@ -37,48 +34,42 @@ src/test/java/
     └── LoginTest.java             # Zero manual instantiation in test bodies
 ```
 
-### How resolution works, step by step
+### How setup works, step by step
 
-1. A test class is annotated `@ExtendWith(PageObjectExtension.class)`.
-2. JUnit 5 inspects each test method's parameters before invoking it.
-3. For every parameter, it asks `PageObjectExtension.supportsParameter(...)`
-   — the extension says yes if the parameter type extends `BasePage` (or is
-   `WebDriver` itself).
-4. For each supported parameter, JUnit calls `resolveParameter(...)`, which:
-   - Pulls (or lazily creates) the thread's `WebDriver` from `DriverFactory`.
-   - Reflectively invokes the page class's `(WebDriver)` constructor.
-   - `BasePage`'s constructor runs `PageFactory.initElements(...)`, wiring
-     up all `@FindBy` locators.
-5. The fully-initialized page object is handed to the test as if it always
-   existed — the test never sees the driver plumbing.
-6. After the test, `afterEach` quits the driver, exactly like Playwright
-   tearing down `page`/`context` after each test.
+1. `@BeforeTest` reads browser config and initializes `WebDriver` via `DriverFactory`.
+2. Test methods use the same driver to execute page-object flows.
+3. CSV test data is loaded through `CsvUtils`.
+4. `@AfterTest` closes the driver with `DriverFactory.quitDriver()`.
 
-## Extending this further
+## Environment Switching
 
-- **Multiple browsers per test** — support a `@Browser("firefox")`
-  annotation read inside `resolveParameter` to pick a different
-  `DriverFactory` strategy per fixture, similar to Playwright's
-  project-based browser matrix.
-- **Fixture composition** — if a page object's constructor needs another
-  fixture (e.g., a `TestDataFixture` for seeded users), extend
-  `instantiatePage` to resolve constructor arguments recursively instead of
-  assuming a single `WebDriver` parameter.
-- **Scoped fixtures** — right now every fixture is function-scoped (fresh
-  per test, like Playwright's default). A `@BeforeAll`-backed variant could
-  support class-scoped fixtures for expensive setup, mirroring Playwright's
-  `worker` fixture scope.
-- **Base URL / config fixture** — add a `TestConfig` fixture (also resolved
-  by the extension) so page objects and tests can pull environment config
-  (base URL, credentials) without hardcoding them, the way Playwright's
-  `baseURL` fixture works.
+Use Maven parameters to switch environments without code changes:
+
+```bash
+mvn test -Denv=qa
+mvn test -Denv=uat
+```
+
+You can also override URL directly:
+
+```bash
+mvn test -Denv=uat -Duat.url=https://example-uat-url
+```
 
 ## Running
 
 ```bash
 mvn test
 mvn test -Dheadless=true   # run headless
+mvn test -Denv=qa          # run with QA config values
+mvn test -Denv=uat         # run with UAT config values
 ```
+
+Environment resolution order for a key like `url`:
+
+1. JVM system property (`-Durl=...`)
+2. Environment-scoped key from `env` (`qa.url`, `uat.url`, `QAurl`, `UATurl`)
+3. Provided default value in code
 
 ## Test Data (CSV)
 
@@ -101,6 +92,14 @@ Run by TestNG group:
 mvn test -Dgroups=smoke
 mvn test -Dgroups=regression
 mvn test "-Dgroups=smoke,regression"
+
+# Rest Assured tests only
+mvn test "-Dtest=tests.RestAssuredApiTest"
+mvn test "-Dtest=tests.RestAssuredApiTest" "-Dgroups=smoke"
+mvn test "-Dtest=tests.RestAssuredApiTest" "-Dgroups=regression"
+
+# Login tests only
+mvn test "-Dtest=tests.LoginTest"
 ```
 
 ## Logger File Details
@@ -130,3 +129,10 @@ Suite files with listener registration:
 - `testng.xml`
 - `testng-smoke.xml`
 - `testng-regression.xml`
+
+## API Test Highlights
+
+- Contract validation with JSON schema (`schemas/post-schema.json`)
+- Strict JSON comparison using parsed JSON objects
+- WireMock mocked GET tests
+- Bearer token and query parameter validation (dummy token)
