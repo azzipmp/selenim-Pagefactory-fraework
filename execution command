@@ -2,3 +2,4 @@
 Set-Location C:\Users\azzip\Downloads\selenium-page-fixture-framework\selenium-page-fixture-framework; mvn test -Dgroups=smoke
 mvn test -Dgroups=regression
 mvn test -Dgroups=smoke,regression
+mvn test "-Dtest=tests.RestAssuredApiTest" "-Dgroups=smoke"

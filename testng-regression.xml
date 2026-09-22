@@ -11,6 +11,7 @@
         </groups>
         <classes>
             <class name="tests.LoginTest"/>
+            <class name="tests.RestAssuredApiTest"/>
         </classes>
     </test>
 </suite>
