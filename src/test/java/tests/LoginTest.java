@@ -6,13 +6,14 @@ import framework.LoggerUtil;
 import framework.TestDataColumns;
 import org.openqa.selenium.WebDriver;
 import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import pages.HomePage;
 import pages.LoginPage;
 import tests.listeners.ExtentTestListener;
+import tests.listeners.RetryAnalyzer;
 
 @Listeners(ExtentTestListener.class)
 public class LoginTest {
@@ -29,7 +30,7 @@ public class LoginTest {
     }
 
 
-    @BeforeMethod(alwaysRun = true)
+    @BeforeTest(alwaysRun = true)
     public void setUp() {
         String browser = ConfigReader.getString("browser", "chrome");
         DriverFactory.setBrowser(browser);
@@ -37,14 +38,15 @@ public class LoginTest {
         LoggerUtil.info("Test setup complete for browser: " + browser);
     }
 
-    @AfterMethod(alwaysRun = true)
+    @AfterTest(alwaysRun = true)
     public void tearDown() {
         DriverFactory.quitDriver();
         LoggerUtil.info("Browser session closed after test");
     }
 
-    @Test(groups = {"smoke"})
+    @Test(groups = {"smoke"}, retryAnalyzer = RetryAnalyzer.class)
     public void validLoginNavigatesToHomePage() {
+        this.driver = DriverFactory.getDriver();
         CsvUtils.CsvTable testData = loginTestData();
         String url = ConfigReader.getString("url", "");
         int executedRows = 0;

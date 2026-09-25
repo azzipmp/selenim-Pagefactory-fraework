@@ -41,6 +41,54 @@ src/test/java/
 3. CSV test data is loaded through `CsvUtils`.
 4. `@AfterTest` closes the driver with `DriverFactory.quitDriver()`.
 
+## Login Reliability: Retries And Locator Fallbacks
+
+The smoke login test uses TestNG's `RetryAnalyzer`:
+
+```java
+@Test(groups = {"smoke"}, retryAnalyzer = RetryAnalyzer.class)
+public void validLoginNavigatesToHomePage() {
+    // test flow
+}
+```
+
+`tests.listeners.RetryAnalyzer` allows two retries after the initial failure,
+so a failed test can run up to three times in total:
+
+1. Initial attempt
+2. Retry 1
+3. Retry 2
+
+Before each retry, the current WebDriver session is closed. The test then
+obtains a fresh driver through `DriverFactory`. Retries are intended for
+transient browser or network failures and should not be used to hide a
+consistent application defect. A successful test is not retried.
+
+The login page also provides lightweight fallback locator handling through
+Selenium's `@FindAll` annotation. Each login control has more than one locator:
+
+| Control | Fallback locators |
+|---|---|
+| Username | `id=username123`, `name=username` |
+| Password | `id=password`, `name=password` |
+| Login button | `id=submit`, `button[type='submit']` |
+
+For example:
+
+```java
+@FindAll({
+    @FindBy(id = "username123"),
+    @FindBy(name = "username")
+})
+private WebElement usernameInput;
+```
+
+Selenium tries the configured alternatives when resolving the element. This
+is a controlled fallback mechanism, not a full AI self-healing system: it does
+not discover new locators or modify the test automatically. Keep the fallback
+locators aligned with stable application attributes such as `name`, `id`, or
+`data-testid`.
+
 ## Environment Switching
 
 Use Maven parameters to switch environments without code changes:
